@@ -1,29 +1,37 @@
 package com.opsian.spark_examples;
 
-import org.apache.spark.api.java.JavaSparkContext;
-import org.junit.Assert;
 import org.junit.Test;
 import scala.Tuple2;
 
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+
 public class BusinessTransactionsTest
 {
+    public static final String TRANSACTIONS = "src/main/resources/transactions";
+    public static final String USERS = "src/main/resources/users";
+
     @Test
     public void shouldParseExampleFile()
     {
-        final JavaSparkContext context = new JavaSparkContext("local", "SparkJoinsTest");
+        checkResults(new BusinessTransactions(TRANSACTIONS, USERS, true)
+            .run());
+    }
 
-        List<Tuple2<String, String>> result = BusinessTransactions.run(
-            "src/main/resources/transactions",
-            "src/main/resources/users",
-            context);
+    @Test
+    public void optimizedShouldParseExampleFile()
+    {
+        checkResults(new BusinessTransactionsOptimized(TRANSACTIONS, USERS, true)
+            .run());
+    }
 
-        Assert.assertEquals("1", result.get(0)._1);
-        Assert.assertEquals("3", result.get(0)._2);
-        Assert.assertEquals("2", result.get(1)._1);
-        Assert.assertEquals("1", result.get(1)._2);
+    private void checkResults(final List<Tuple2<String, String>> result)
+    {
+        assertEquals("1", result.get(0)._1);
+        assertEquals("3", result.get(0)._2);
 
-        context.stop();
+        assertEquals("2", result.get(1)._1);
+        assertEquals("1", result.get(1)._2);
     }
 }

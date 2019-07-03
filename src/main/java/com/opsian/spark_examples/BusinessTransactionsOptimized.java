@@ -12,21 +12,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class BusinessTransactions
+public class BusinessTransactionsOptimized
 {
     private final String transactionsPath;
     private final String usersPath;
     private final SparkSession spark;
     private final JavaSparkContext sparkContext;
 
-    public BusinessTransactions(
+    public BusinessTransactionsOptimized(
         final String transactionsPath, final String usersPath, final boolean isLocal)
     {
         this.transactionsPath = transactionsPath;
         this.usersPath = usersPath;
 
         final SparkSession.Builder builder = SparkSession.builder()
-            .appName("BusinessTransactions");
+            .appName("BusinessTransactionsOptimized")
+            .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 
         if (isLocal)
         {
@@ -44,12 +45,12 @@ public class BusinessTransactions
         final String transactionsPath = thisDir + "big-transactions";
         final String usersPath = thisDir + "big-users";
         final String outputPath = thisDir + "results";
-        final BusinessTransactions job = new BusinessTransactions(transactionsPath, usersPath, false);
+        final BusinessTransactionsOptimized job = new BusinessTransactionsOptimized(transactionsPath, usersPath, false);
         final List<Tuple2<String, String>> output = job.run();
         job.save(output, outputPath);
     }
 
-    void save(final List<Tuple2<String, String>> output, final String outputPath)
+    private void save(final List<Tuple2<String, String>> output, final String outputPath)
     {
         sparkContext
             .parallelizePairs(output)
@@ -60,7 +61,6 @@ public class BusinessTransactions
 
     public List<Tuple2<String, String>> run()
     {
-
         JavaPairRDD<Integer, Integer> transactions = parseTransactionsFile(transactionsPath, sparkContext);
         JavaPairRDD<Integer, String> users = parseUsersFile(usersPath, sparkContext);
 
@@ -78,7 +78,7 @@ public class BusinessTransactions
             .collect(Collectors.toList());
     }
 
-    protected JavaPairRDD<Integer, String> parseUsersFile(
+    private static JavaPairRDD<Integer, String> parseUsersFile(
         final String usersPath, final JavaSparkContext sparkContext)
     {
         final JavaRDD<String> userInputFile = sparkContext.textFile(usersPath);
@@ -91,21 +91,63 @@ public class BusinessTransactions
         });
     }
 
-    protected JavaPairRDD<Integer, Integer> parseTransactionsFile(
+    private static JavaPairRDD<Integer, Integer> parseTransactionsFile(
         final String transactionsPath, final JavaSparkContext sparkContext)
     {
         final JavaRDD<String> transactionInputFile = sparkContext.textFile(transactionsPath);
         return transactionInputFile
             .filter(line -> !line.trim().isEmpty())
             .mapToPair(line ->
-            {
-                String[] transactionSplit = line.split("\\s+");
-                final int quantity = Integer.parseInt(transactionSplit[1]);
-                final int userId = Integer.parseInt(transactionSplit[2]);
-                return new Tuple2<>(
-                    userId,
-                    quantity);
-            });
+        {
+            int index = 0;
+
+            // Skip column 0
+            index = skipContent(line, index);
+
+            // skip gap 0
+            index = skipWhitespace(line, index);
+
+            // get column 1
+            int column1Start = index;
+            index = skipContent(line, index);
+            String column1 = line.substring(column1Start, index);
+
+            // skip gap 1
+            index = skipWhitespace(line, index);
+
+            // get column 2
+            int column2Start = index;
+            index = skipContent(line, index);
+            String column2 = line.substring(column2Start, index);
+
+            final int quantity = Integer.parseInt(column1);
+            final int userId = Integer.parseInt(column2);
+            return new Tuple2<>(userId, quantity);
+        });
+    }
+
+    private static int skipWhitespace(final String line, int index)
+    {
+        while (isWhiteSpace(line, index)) {
+            index++;
+        }
+
+        return index;
+    }
+
+    private static int skipContent(final String line, int index)
+    {
+        while (!isWhiteSpace(line, index)) {
+            index++;
+        }
+
+        return index;
+    }
+
+    private static boolean isWhiteSpace(final String line, final int index)
+    {
+        final char ch = line.charAt(index);
+        return ch == ' ' || ch == '\t';
     }
 
 }
