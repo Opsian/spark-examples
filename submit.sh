@@ -3,7 +3,7 @@
 set -eu
 
 "$SPARK_HOME/bin/spark-submit" \
-  --class "com.opsian.spark_examples.WordCount" \
+  --class "com.opsian.spark_examples.${CLASS}" \
   --master "spark://$HOST:7077" \
   --executor-memory 2G \
   --total-executor-cores 8 \
