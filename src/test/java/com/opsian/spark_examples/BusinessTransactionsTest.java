@@ -2,6 +2,10 @@ package com.opsian.spark_examples;
 
 import org.junit.Test;
 import scala.Tuple2;
+import scala.collection.JavaConverters;
+import scala.collection.Seq;
+import scala.concurrent.JavaConversions;
+import scala.concurrent.JavaConversions$;
 
 import java.util.List;
 
@@ -24,6 +28,25 @@ public class BusinessTransactionsTest
     {
         checkResults(new BusinessTransactionsOptimized(TRANSACTIONS, USERS, true)
             .run());
+    }
+
+    @Test
+    public void scalaShouldParseExampleFile()
+    {
+        checkResults(new BusinessTransactionsScala(TRANSACTIONS, USERS, true)
+            .run());
+    }
+
+    @Test
+    public void scalaOptimizedShouldParseExampleFile()
+    {
+        checkResults(new BusinessTransactionsScalaOptimized(TRANSACTIONS, USERS, true)
+            .run());
+    }
+
+    private void checkResults(final Seq<Tuple2<String, String>> result)
+    {
+        checkResults(JavaConverters.seqAsJavaList(result));
     }
 
     private void checkResults(final List<Tuple2<String, String>> result)
