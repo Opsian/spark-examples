@@ -46,7 +46,7 @@ public class BusinessTransactionsTest
 
     private void checkResults(final Seq<Tuple2<String, String>> result)
     {
-        checkResults(JavaConverters.seqAsJavaList(result));
+        checkResults(JavaConverters.seqAsJavaListConverter(result).asJava());
     }
 
     private void checkResults(final List<Tuple2<String, String>> result)
