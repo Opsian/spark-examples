@@ -28,7 +28,8 @@ class BusinessTransactionsScala(val transactionsPath: String, val usersPath: Str
   private val sparkContext = spark.sparkContext
 
   def save(output: Seq[(String, String)], outputPath: String): Unit = {
-    sparkContext.parallelize(output).saveAsHadoopFile(outputPath, classOf[String], classOf[String], classOf[TextOutputFormat[_, _]])
+    sparkContext.parallelize(output)
+      .saveAsTextFile(outputPath)
     spark.stop()
   }
 

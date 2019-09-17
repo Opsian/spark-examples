@@ -27,13 +27,15 @@ class BusinessTransactionsScalaOptimized
 (val transactionsPath: String, val usersPath: String, val isLocal: Boolean) {
   val builder: SparkSession.Builder = SparkSession.builder
     .appName("BusinessTransactionsScalaOptimized")
-    // .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+    .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
   if (isLocal) builder.master("local")
   private val spark = builder.getOrCreate
   private val sparkContext = spark.sparkContext
 
   def save(output: Seq[(String, String)], outputPath: String): Unit = {
-    sparkContext.parallelize(output).saveAsHadoopFile(outputPath, classOf[String], classOf[String], classOf[TextOutputFormat[_, _]])
+    sparkContext
+      .parallelize(output)
+      .saveAsHadoopFile(outputPath, classOf[String], classOf[String], classOf[TextOutputFormat[_, _]])
     spark.stop()
   }
 
@@ -86,8 +88,8 @@ class BusinessTransactionsScalaOptimized
         index = skipContent(line, index)
         val column2 = line.substring(column2Start, index)
 
-        val quantity = column1.toInt
-        val userId = column2.toInt
+        val quantity = Integer.parseInt(column1)
+        val userId = Integer.parseInt(column2)
         (userId, quantity)
     })
   }
