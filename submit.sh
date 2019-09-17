@@ -2,6 +2,8 @@
 
 set -eu
 
+. ./vars.sh
+
 "$SPARK_HOME/bin/spark-submit" \
   --class "com.opsian.spark_examples.${CLASS}" \
   --master "spark://$HOST:7077" \
